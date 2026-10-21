@@ -1,0 +1,15 @@
+{
+  "slug": "nur-klinika",
+  "name": "Nur Klinika",
+  "plan": "demo",
+  "settings": {
+    "tone": "samimiy, hurmatli va qisqa",
+    "working_hours": "Dushanba–Shanba 08:00–20:00, Yakshanba 09:00–15:00",
+    "handoff_threshold": 0.35
+  },
+  "documents": [
+    {"file": "narxlar.md", "title": "Narxlar ro'yxati"},
+    {"file": "faq.md", "title": "Ko'p so'raladigan savollar"},
+    {"file": "xizmatlar.md", "title": "Xizmatlar va shifokorlar"}
+  ]
+}
