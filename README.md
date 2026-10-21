@@ -27,7 +27,7 @@ Requirements: Docker Desktop, `make`. For development without Docker: [uv](https
 
 1. `cp .env.example .env` and fill in `TELEGRAM_BOT_TOKEN`, `ANTHROPIC_API_KEY`, `TELEGRAM_WEBHOOK_SECRET`, `JWT_SECRET` and `ENCRYPTION_KEY`. Generate the Fernet key with:
    `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
-2. `make up` starts postgres, redis, minio, langfuse, api, worker and bot.
+2. `make up` starts postgres, redis, s3 (SeaweedFS), langfuse, api, worker and bot.
 3. `make seed` runs the migrations, creates Nur Klinika and indexes its documents. The first run downloads the embedding model (~1 GB).
 4. Message the bot: `Stomatolog qabuli necha pul?` → "150 000 so'm", with "Manba: Narxlar ro'yxati".
 

@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     # Data
     database_url: str = "postgresql+asyncpg://app:app@localhost:5432/app"
     redis_url: str = "redis://localhost:6379/0"
-    s3_endpoint: str = "http://localhost:9000"
+    s3_endpoint: str = "http://localhost:8333"
     s3_bucket: str = "documents"
     s3_access_key: str = ""
     s3_secret_key: SecretStr = SecretStr("")

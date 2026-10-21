@@ -147,3 +147,44 @@ def restore_handlers() -> Any:
     yield
     tools.HANDLERS.clear()
     tools.HANDLERS.update(original)
+
+
+async def test_auth_error_becomes_unavailable_without_fallback() -> None:
+    import anthropic
+    import httpx
+
+    from app.ai.llm import AnthropicLLM, LLMUnavailableError
+
+    calls: list[str] = []
+
+    class FailingMessages:
+        async def create(self, **kwargs: Any) -> Any:
+            calls.append(kwargs["model"])
+            request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+            raise anthropic.AuthenticationError(
+                "invalid x-api-key", response=httpx.Response(401, request=request), body=None
+            )
+
+    class FakeClient:
+        api_key = "k"
+        auth_token = None
+
+        class beta:
+            messages = FailingMessages()
+
+    llm = AnthropicLLM(cast(anthropic.AsyncAnthropic, FakeClient()), "main", "fast")
+    with pytest.raises(LLMUnavailableError):
+        await llm.create(model="main", system="s", tools=[], messages=[])
+    assert calls == ["main"]
+
+
+async def test_missing_key_is_unavailable() -> None:
+    import anthropic
+
+    from app.ai.llm import AnthropicLLM, LLMUnavailableError
+
+    client = anthropic.AsyncAnthropic(api_key=None, auth_token=None)
+    client.api_key = None
+    llm = AnthropicLLM(client, "main", "fast")
+    with pytest.raises(LLMUnavailableError, match="ANTHROPIC_API_KEY"):
+        await llm.create(model="main", system="s", tools=[], messages=[])

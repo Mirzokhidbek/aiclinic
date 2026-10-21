@@ -110,6 +110,8 @@ class AnthropicLLM:
         messages: Sequence[BetaMessageParam],
         max_tokens: int = 4096,
     ) -> BetaMessage:
+        if not (self._client.api_key or self._client.auth_token):
+            raise LLMUnavailableError("ANTHROPIC_API_KEY is not set")
         try:
             return await self._call(model, system, tools, messages, max_tokens)
         except (
@@ -122,6 +124,9 @@ class AnthropicLLM:
                 "llm_fallback",
                 extra={"from_model": model, "to_model": fallback, "error": type(exc).__name__},
             )
+        except anthropic.APIError as exc:
+            # Auth, bad request, etc.: retrying on another model won't help.
+            raise LLMUnavailableError(f"{type(exc).__name__}: {exc}") from exc
         try:
             return await self._call(fallback, system, tools, messages, max_tokens)
         except anthropic.APIError as exc:

@@ -19,7 +19,7 @@ seed: migrate  ## Seed demo tenants and index their documents
 	$(COMPOSE) exec api python -m app.seed /seed
 
 test:
-	$(BACKEND) uv run pytest
+	$(BACKEND) TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock uv run pytest
 
 lint:
 	$(BACKEND) uv run ruff check . && uv run ruff format --check .

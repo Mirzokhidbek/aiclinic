@@ -6,7 +6,7 @@ x-backend: &backend
   environment:
     DATABASE_URL: postgresql+asyncpg://app:app@postgres:5432/app
     REDIS_URL: redis://redis:6379/0
-    S3_ENDPOINT: http://minio:9000
+    S3_ENDPOINT: http://s3:8333
     SEED_DIR: /seed
   volumes:
     - models:/models
@@ -42,15 +42,13 @@ services:
       interval: 5s
       retries: 20
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+  s3:
+    # S3-compatible object storage (MinIO images are no longer published on Docker Hub).
+    image: chrislusf/seaweedfs:latest
+    command: ["server", "-dir=/data", "-s3", "-s3.port=8333"]
     volumes:
-      - miniodata:/data
-    ports: ["9000:9000", "9001:9001"]
+      - s3data:/data
+    ports: ["8333:8333"]
 
   langfuse:
     image: langfuse/langfuse:2
@@ -89,5 +87,5 @@ services:
 
 volumes:
   pgdata:
-  miniodata:
+  s3data:
   models:
