@@ -8,19 +8,23 @@ import json
 import logging
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.auth.crypto import encrypt
+from app.booking.seed import seed_services
 from app.config import get_settings
 from app.db import get_engine, get_sessionmaker, set_tenant
 from app.observability.logging import configure_logging
 from app.retrieval.embeddings import Embedder, get_embedder
 from app.retrieval.ingest import ingest_text, upsert_document
 from app.tenants.models import Tenant
+from app.tenants.service import tenant_settings
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +70,20 @@ async def seed_tenant(
                     "chunks": count,
                     "version": document.version,
                 },
+            )
+        services_file = tenant_dir / "services.json"
+        if services_file.exists():
+            tz = ZoneInfo(tenant_settings(tenant).timezone)
+            services, slots = await seed_services(
+                session,
+                tenant.id,
+                json.loads(services_file.read_text(encoding="utf-8")),
+                tz,
+                datetime.now(tz).date(),
+            )
+            logger.info(
+                "services_seeded",
+                extra={"tenant": tenant.slug, "services": services, "new_slots": slots},
             )
     return tenant
 

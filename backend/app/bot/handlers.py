@@ -1,7 +1,7 @@
 from aiogram import F, Router
 from aiogram.enums import ChatAction
 from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 
 from app.conversation.pipeline import Deps, IncomingMessage, Reply, handle_customer_message
 from app.tenants.models import Tenant
@@ -23,9 +23,26 @@ def render(reply: Reply) -> str:
     return f"{reply.text}\n\n📄 Manba: {', '.join(reply.sources)}"
 
 
+def miniapp_url(base: str, tenant: Tenant) -> str | None:
+    """Telegram only opens Mini Apps over HTTPS; return None until one is configured."""
+    if not base.startswith("https://"):
+        return None
+    return f"{base.rstrip('/')}/?tenant={tenant.slug}"
+
+
 @router.message(CommandStart())
-async def on_start(message: Message, tenant: Tenant) -> None:
-    await message.answer(WELCOME.format(name=tenant.name))
+async def on_start(message: Message, tenant: Tenant, deps: Deps) -> None:
+    url = miniapp_url(deps.settings.miniapp_url, tenant)
+    markup = (
+        InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="📅 Qabulga yozilish", web_app=WebAppInfo(url=url))]
+            ]
+        )
+        if url
+        else None
+    )
+    await message.answer(WELCOME.format(name=tenant.name), reply_markup=markup)
 
 
 @router.message(F.text)

@@ -3,6 +3,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.booking.errors import BookingError
+
 
 class ApiError(Exception):
     def __init__(self, status: int, code: str, message: str) -> None:
@@ -19,6 +21,10 @@ def _error(status: int, code: str, message: str) -> JSONResponse:
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
     async def _api_error(_: Request, exc: ApiError) -> JSONResponse:
+        return _error(exc.status, exc.code, exc.message)
+
+    @app.exception_handler(BookingError)
+    async def _booking_error(_: Request, exc: BookingError) -> JSONResponse:
         return _error(exc.status, exc.code, exc.message)
 
     @app.exception_handler(StarletteHTTPException)

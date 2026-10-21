@@ -1,4 +1,4 @@
-.PHONY: up down logs migrate seed test lint fmt typecheck check
+.PHONY: up down logs migrate seed test lint fmt typecheck check openapi miniapp-dev miniapp-link e2e
 
 COMPOSE := docker compose
 BACKEND := cd backend &&
@@ -31,3 +31,16 @@ typecheck:
 	$(BACKEND) uv run mypy
 
 check: lint typecheck test
+
+openapi:       ## Regenerate OpenAPI schema and the Mini App's typed client
+	$(BACKEND) uv run python -m app.openapi_dump openapi.json
+	cd miniapp && npm run gen:api
+
+miniapp-dev:   ## Mini App dev server on :5173 (proxies /v1 to the API)
+	cd miniapp && npm run dev
+
+miniapp-link:  ## Print a signed URL that opens the Mini App in a browser as a Telegram user
+	cd miniapp && npm run -s dev:link
+
+e2e:           ## Playwright booking flow against the running stack
+	cd miniapp && npx playwright test

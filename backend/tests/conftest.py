@@ -9,6 +9,7 @@ os.environ.update(
         "TELEGRAM_WEBHOOK_SECRET": "test-secret",
         "ENCRYPTION_KEY": Fernet.generate_key().decode(),
         "ANTHROPIC_API_KEY": "test-key",
+        "JWT_SECRET": "test-jwt-secret-with-at-least-32-bytes!!",
         "PUBLIC_BASE_URL": "",
     }
 )

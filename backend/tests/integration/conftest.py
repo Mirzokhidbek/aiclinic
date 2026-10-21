@@ -1,4 +1,4 @@
-import asyncio
+import os
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
@@ -33,12 +33,19 @@ def database_url() -> Iterator[str]:
         cfg.set_main_option("script_location", str(BACKEND / "alembic"))
         cfg.attributes["database_url"] = url
         # env.py calls asyncio.run(); keep it off the test event loop
-        asyncio.get_event_loop_policy()
         import threading
 
         t = threading.Thread(target=command.upgrade, args=(cfg, "head"))
         t.start()
         t.join()
+        # Point the app's own engine/sessionmaker at the container too.
+        from app.config import get_settings
+        from app.db import get_engine, get_sessionmaker
+
+        os.environ["DATABASE_URL"] = url
+        get_settings.cache_clear()
+        get_engine.cache_clear()
+        get_sessionmaker.cache_clear()
         yield url
 
 

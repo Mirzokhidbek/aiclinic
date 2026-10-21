@@ -4,8 +4,11 @@ from contextlib import asynccontextmanager
 from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from app.auth.api import router as auth_router
+from app.booking.api import router as booking_router
 from app.bot.webhook import router as telegram_router
 from app.config import get_settings
 from app.db import get_engine
@@ -26,9 +29,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app() -> FastAPI:
+    settings = get_settings()
     app = FastAPI(title="Clinic AI", version="0.1.0", lifespan=lifespan)
     install_error_handlers(app)
+    origins = [*settings.cors_origins, *([settings.miniapp_url] if settings.miniapp_url else [])]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[o.rstrip("/") for o in origins],
+        allow_methods=["GET", "POST", "DELETE"],
+        allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
+    )
     app.include_router(telegram_router)
+    app.include_router(auth_router)
+    app.include_router(booking_router)
 
     @app.get("/health", tags=["ops"])
     async def health() -> dict[str, str]:

@@ -22,5 +22,63 @@ jobs:
         run: uv run ruff check . && uv run ruff format --check .
       - name: Mypy
         run: uv run mypy
+      - name: OpenAPI schema is up to date
+        run: uv run python -m app.openapi_dump /tmp/openapi.json && diff openapi.json /tmp/openapi.json
       - name: Pytest
         run: uv run pytest -v
+
+  miniapp:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: miniapp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: miniapp/package-lock.json
+      - run: npm ci
+      - name: Generated API client is up to date
+        run: npm run gen:api && git diff --exit-code src/api/schema.d.ts
+      - run: npm run lint && npm run format:check
+      - run: npm run typecheck
+      - run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, miniapp]
+    env:
+      TELEGRAM_BOT_TOKEN: "123456:ci-test-token"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create .env for the stack
+        run: |
+          cp .env.example .env
+          sed -i "s|^TELEGRAM_BOT_TOKEN=.*|TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN|" .env
+          sed -i "s|^TELEGRAM_WEBHOOK_SECRET=.*|TELEGRAM_WEBHOOK_SECRET=$(openssl rand -hex 16)|" .env
+          sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -hex 32)|" .env
+          sed -i "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$(python3 -c 'import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())')|" .env
+      - name: Start API, Postgres and Redis
+        run: docker compose up -d --build --wait api
+      - name: Seed demo tenant
+        run: docker compose exec -T api alembic upgrade head && docker compose exec -T api python -m app.seed /seed
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: miniapp/package-lock.json
+      - working-directory: miniapp
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Playwright
+        working-directory: miniapp
+        run: npx playwright test
+      - name: API logs on failure
+        if: failure()
+        run: docker compose logs api
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: miniapp/test-results

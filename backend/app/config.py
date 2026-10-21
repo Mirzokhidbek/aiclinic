@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     telegram_webhook_secret: SecretStr = SecretStr("")
     public_base_url: str = ""
     miniapp_url: str = ""
+    cors_origins: list[str] = ["http://localhost:5173"]
 
     # Anthropic
     anthropic_api_key: SecretStr = SecretStr("")

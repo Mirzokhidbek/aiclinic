@@ -8,10 +8,12 @@ import asyncio
 import logging
 
 from aiogram import Bot
+from aiogram.types import MenuButtonWebApp, WebAppInfo
 from arq import create_pool
 from arq.connections import ArqRedis, RedisSettings
 
 from app.bot.dispatcher import bot_for, close_bots
+from app.bot.handlers import miniapp_url
 from app.config import get_settings
 from app.db import get_sessionmaker
 from app.observability.logging import configure_logging
@@ -31,6 +33,19 @@ async def register_webhook(bot: Bot, tenant: Tenant) -> None:
         drop_pending_updates=False,
     )
     logger.info("webhook_registered", extra={"tenant": tenant.slug, "url": url})
+
+
+async def set_menu_button(bot: Bot, tenant: Tenant) -> None:
+    url = miniapp_url(get_settings().miniapp_url, tenant)
+    if url is None:
+        logger.info(
+            "menu_button_skipped", extra={"tenant": tenant.slug, "reason": "no https MINIAPP_URL"}
+        )
+        return
+    await bot.set_chat_menu_button(
+        menu_button=MenuButtonWebApp(text="Ochish", web_app=WebAppInfo(url=url))
+    )
+    logger.info("menu_button_set", extra={"tenant": tenant.slug, "url": url})
 
 
 async def poll(bot: Bot, tenant: Tenant, pool: ArqRedis) -> None:
@@ -67,6 +82,11 @@ async def main() -> None:
         logger.warning("no tenants with a bot token yet; run `make seed`")
         await asyncio.sleep(10)
     pool = await create_pool(RedisSettings.from_dsn(settings.redis_url))
+    for tenant in tenants:
+        try:
+            await set_menu_button(bot_for(tenant), tenant)
+        except Exception:
+            logger.exception("menu_button_failed", extra={"tenant": tenant.slug})
     try:
         if settings.public_base_url:
             for tenant in tenants:

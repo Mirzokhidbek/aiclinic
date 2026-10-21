@@ -2,7 +2,7 @@
 
 Multi-tenant support platform: customers ask the Telegram bot in Uzbek and get answers grounded in the business's own documents, with sources. Demo tenant: **Nur Klinika**. Spec: [BUILD.md](BUILD.md).
 
-**Status:** Milestone 1 (foundations + FAQ bot).
+**Status:** M1 (FAQ bot) is built; the live Claude answer is waiting for an API key. M4 (Mini App booking flow) is done.
 
 ## Architecture (M1)
 
@@ -19,7 +19,10 @@ Telegram ──► api /v1/telegram/webhook ┴─► Redis (arq) ──► work
 - `backend/app/ai/` — Anthropic client wrapper (timeouts, retries, model fallback, prompt caching, cost), bounded tool loop, versioned prompts.
 - `backend/app/retrieval/` — heading-aware chunking, pluggable embedder (local fastembed `paraphrase-multilingual-mpnet-base-v2`, 768-d), vector search.
 - `backend/app/bot/` — aiogram handlers, webhook route (secret-checked, enqueue + 200), polling/webhook registration service.
-- `seed/nur_klinika/` — demo price list, FAQ, services/doctors (realistic but fictional).
+- `backend/app/booking/` — services, slots, bookings. Slot rows are locked with `SELECT ... FOR UPDATE`, so double booking is impossible. Bookings take an `Idempotency-Key` and stay pending (held) for 15 minutes until confirmed. Never imports `ai/`.
+- `backend/app/auth/` — Telegram `initData` HMAC verification (24 h max age) → JWT holding tenant, customer and role.
+- `miniapp/` — React 18 + TypeScript + Vite + Tailwind + `@telegram-apps/sdk-react` + TanStack Query. Uses the Telegram theme, MainButton, BackButton and haptics. The typed client is generated from `backend/openapi.json`.
+- `seed/nur_klinika/` — demo price list, FAQ, services/doctors, bookable services and slots (realistic but fictional).
 
 ## Run locally
 
@@ -33,10 +36,23 @@ Requirements: Docker Desktop, `make`. For development without Docker: [uv](https
 
 With `PUBLIC_BASE_URL` empty, the bot service long-polls Telegram. When it is set, it registers `PUBLIC_BASE_URL/v1/telegram/webhook/<tenant>` instead.
 
+## Mini App
+
+```bash
+make miniapp-dev    # Vite on http://localhost:5173, /v1 proxied to the API
+make miniapp-link   # prints a signed URL: open it in a browser to act as a Telegram user
+make e2e            # Playwright: book -> confirm -> cancel, and a double-booking race
+```
+
+Screens: home, services catalog, date and slot picker, booking confirmation (`/booking/:id?t=<token>`) and my bookings. Every screen has skeleton, empty and error states. The access token lives in memory only.
+
+In Telegram, the bot shows a menu button and an "Open" button on `/start` once `MINIAPP_URL` is an `https://` URL (for example a Vercel deploy). Telegram doesn't allow plain `http` there.
+
 ## Development
 
 ```bash
 make lint typecheck test   # ruff, mypy --strict, pytest
+make openapi               # after changing API schemas: refresh openapi.json and the TS client
 ```
 
 The integration tests use testcontainers (`pgvector/pgvector:pg16`) and are skipped when Docker isn't available. CI runs them.

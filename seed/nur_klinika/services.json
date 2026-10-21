@@ -1,0 +1,22 @@
+{
+  "slot_days": 14,
+  "hours": {
+    "weekday": ["09:00", "18:00"],
+    "sunday": ["09:00", "14:00"]
+  },
+  "services": [
+    {"name": "Stomatolog qabuli", "category": "Stomatologiya", "price_uzs": 150000, "duration_min": 30, "description": "Konsultatsiya va og'iz bo'shlig'ini ko'rik."},
+    {"name": "Tishni professional tozalash", "category": "Stomatologiya", "price_uzs": 350000, "duration_min": 60, "description": "Ultratovush va Air Flow bilan tozalash."},
+    {"name": "Kariesni davolash (plomba)", "category": "Stomatologiya", "price_uzs": 400000, "duration_min": 60, "description": "Yorug'lik bilan qotadigan plomba."},
+    {"name": "Bolalar stomatologi qabuli", "category": "Stomatologiya", "price_uzs": 120000, "duration_min": 30, "description": "3 yoshdan katta bolalar uchun."},
+    {"name": "Tishlarni oqartirish (ZOOM)", "category": "Stomatologiya", "price_uzs": 1800000, "duration_min": 90, "description": "Bir seansda ZOOM tizimi bilan oqartirish."},
+    {"name": "Terapevt qabuli", "category": "Terapiya", "price_uzs": 120000, "duration_min": 30, "description": "Umumiy ko'rik va maslahat."},
+    {"name": "Kardiolog qabuli", "category": "Terapiya", "price_uzs": 180000, "duration_min": 30, "description": "Yurak va qon tomirlari bo'yicha mutaxassis."},
+    {"name": "Nevrolog qabuli", "category": "Terapiya", "price_uzs": 180000, "duration_min": 30, "description": "Asab tizimi bo'yicha mutaxassis."},
+    {"name": "Pediatr qabuli", "category": "Terapiya", "price_uzs": 130000, "duration_min": 30, "description": "Bolalar shifokori."},
+    {"name": "Ginekolog qabuli", "category": "Terapiya", "price_uzs": 170000, "duration_min": 30, "description": "Ayollar salomatligi bo'yicha mutaxassis."},
+    {"name": "EKG", "category": "Diagnostika", "price_uzs": 80000, "duration_min": 30, "description": "Elektrokardiogramma."},
+    {"name": "UZI (qorin bo'shlig'i)", "category": "Diagnostika", "price_uzs": 200000, "duration_min": 30, "description": "Tekshiruvdan 6 soat oldin ovqat yemang."},
+    {"name": "Umumiy qon tahlili", "category": "Diagnostika", "price_uzs": 60000, "duration_min": 30, "description": "Ertalab och qoringa topshiriladi."}
+  ]
+}
